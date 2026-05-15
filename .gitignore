@@ -25,3 +25,7 @@ dist-ssr
 
 .env
 stats/
+
+# Electron builder output
+release/
+build/

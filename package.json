@@ -2,10 +2,16 @@
     "name": "chartdb",
     "private": true,
     "version": "1.20.1",
+    "main": "desktop/main.js",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "npm run lint && tsc -b && vite build",
+        "desktop:build-web": "npm run build",
+        "desktop:dev": "npm run desktop:build-web && electron .",
+        "desktop:build:mac": "npm run desktop:build-web && electron-builder --mac --arm64",
+        "desktop:build:mac:all": "npm run desktop:build-web && electron-builder --mac --x64 --arm64",
+        "desktop:build:mac:x64": "npm run desktop:build-web && electron-builder --mac --x64",
         "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
         "lint:fix": "npm run lint -- --fix",
         "preview": "vite preview",
@@ -93,6 +99,8 @@
         "@vitejs/plugin-react": "^5.1.2",
         "@vitest/ui": "^3.2.4",
         "autoprefixer": "^10.4.20",
+        "electron": "^42.1.0",
+        "electron-builder": "^26.8.1",
         "eslint": "^9.16.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-css-modules": "^2.12.0",
@@ -113,5 +121,32 @@
         "unplugin-inject-preload": "^3.0.0",
         "vite": "^7.2.7",
         "vitest": "^3.2.4"
+    },
+    "build": {
+        "appId": "io.chartdb.desktop",
+        "productName": "ChartDB",
+        "directories": {
+            "output": "release"
+        },
+        "files": [
+            "dist/**/*",
+            "desktop/**/*",
+            "package.json",
+            "!node_modules"
+        ],
+        "asar": true,
+        "mac": {
+            "icon": "build/icon.png",
+            "category": "public.app-category.developer-tools",
+            "artifactName": "ChartDB-${version}-${arch}.${ext}",
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "arm64"
+                    ]
+                }
+            ]
+        }
     }
 }
