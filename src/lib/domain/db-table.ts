@@ -15,6 +15,10 @@ export const MID_TABLE_SIZE = 337;
 export const MIN_TABLE_SIZE = 224;
 export const TABLE_MINIMIZED_FIELDS = 10;
 
+const TABLE_NAME_BASE_WIDTH = 72;
+const TABLE_NAME_ASCII_WIDTH = 10;
+const TABLE_NAME_CJK_WIDTH = 18;
+
 export interface DBTable {
     id: string;
     name: string;
@@ -62,6 +66,22 @@ export const generateTableKey = ({
     schemaName: string | null | undefined;
     tableName: string;
 }) => `${schemaNameToDomainSchemaName(schemaName) ?? ''}.${tableName}`;
+
+export const calcInitialTableWidth = (tableName: string): number => {
+    const estimatedTextWidth = Array.from(tableName).reduce((sum, char) => {
+        return (
+            sum +
+            (/[\u3400-\u9FFF\uF900-\uFAFF]/.test(char)
+                ? TABLE_NAME_CJK_WIDTH
+                : TABLE_NAME_ASCII_WIDTH)
+        );
+    }, 0);
+
+    return Math.min(
+        MAX_TABLE_SIZE,
+        Math.max(MIN_TABLE_SIZE, TABLE_NAME_BASE_WIDTH + estimatedTextWidth)
+    );
+};
 
 export const adjustTablePositions = ({
     relationships: inputRelationships,
@@ -294,6 +314,20 @@ export function adjustTablePositionsWithoutAreas(
             return getTableDimensions(table);
         };
 
+        const getTableLayoutWidthAndHeight = (
+            tableId: string
+        ): {
+            width: number;
+            height: number;
+        } => {
+            const { width, height } = getTableWidthAndHeight(tableId);
+
+            return {
+                width: Math.min(width, MID_TABLE_SIZE),
+                height,
+            };
+        };
+
         const isOverlapping = (
             x: number,
             y: number,
@@ -393,11 +427,11 @@ export function adjustTablePositionsWithoutAreas(
                     );
                     if (connectedTable) {
                         const { width: tableWidth, height: tableHeight } =
-                            getTableWidthAndHeight(table.id);
+                            getTableLayoutWidthAndHeight(table.id);
                         const {
                             width: connectedTableWidth,
                             height: connectedTableHeight,
-                        } = getTableWidthAndHeight(connectedTableId);
+                        } = getTableLayoutWidthAndHeight(connectedTableId);
                         const avgWidth = (tableWidth + connectedTableWidth) / 2;
 
                         const avgHeight =
@@ -417,12 +451,16 @@ export function adjustTablePositionsWithoutAreas(
         // Position connected tables first
         if (connectedTables.length < 100) {
             // Use relationship-based positioning for small sets of connected tables
+            const connectedColumnCount = Math.max(
+                1,
+                Math.ceil(Math.sqrt(connectedTables.length))
+            );
             connectedTables.forEach((table, index) => {
                 if (!positionedTables.has(table.id)) {
-                    const row = Math.floor(index / 6);
-                    const col = index % 6;
+                    const row = Math.floor(index / connectedColumnCount);
+                    const col = index % connectedColumnCount;
                     const { width: tableWidth, height: tableHeight } =
-                        getTableWidthAndHeight(table.id);
+                        getTableLayoutWidthAndHeight(table.id);
 
                     const x = startX + col * (tableWidth + gapX * 2);
                     const y = startY + row * (tableHeight + gapY * 2);
@@ -431,12 +469,16 @@ export function adjustTablePositionsWithoutAreas(
             });
         } else {
             // Use simple grid layout for large sets of connected tables
+            const connectedColumnCount = Math.max(
+                1,
+                Math.ceil(Math.sqrt(connectedTables.length))
+            );
             connectedTables.forEach((table, index) => {
                 if (!positionedTables.has(table.id)) {
-                    const row = Math.floor(index / 10); // More columns for large sets
-                    const col = index % 10;
+                    const row = Math.floor(index / connectedColumnCount);
+                    const col = index % connectedColumnCount;
                     const { width: tableWidth, height: tableHeight } =
-                        getTableWidthAndHeight(table.id);
+                        getTableLayoutWidthAndHeight(table.id);
 
                     const x = startX + col * (tableWidth + gapX);
                     const y = startY + row * (tableHeight + gapY);
@@ -467,13 +509,17 @@ export function adjustTablePositionsWithoutAreas(
         if (isolatedTables.length > 0) {
             const isolatedStartY = maxY + gapY * 2;
             const isolatedStartX = startX;
+            const isolatedColumnCount = Math.max(
+                1,
+                Math.ceil(Math.sqrt(isolatedTables.length))
+            );
 
             isolatedTables.forEach((table, index) => {
                 if (!positionedTables.has(table.id)) {
-                    const row = Math.floor(index / 8); // More columns for isolated tables
-                    const col = index % 8;
+                    const row = Math.floor(index / isolatedColumnCount);
+                    const col = index % isolatedColumnCount;
                     const { width: tableWidth, height: tableHeight } =
-                        getTableWidthAndHeight(table.id);
+                        getTableLayoutWidthAndHeight(table.id);
 
                     // Use a simple grid layout for isolated tables
                     const x = isolatedStartX + col * (tableWidth + gapX);
@@ -523,29 +569,42 @@ export function adjustTablePositionsWithoutAreas(
     return tables;
 }
 
+export const FIELD_HEIGHT = 32; // h-8 per field
+export const FIELD_COMMENT_EXTRA_HEIGHT = 20; // 注释行额外高度
+export const TABLE_COMMENT_EXTRA_HEIGHT = 20; // 表注释行额外高度
+
+export const calcFieldHeight = (field: DBField): number => {
+    return FIELD_HEIGHT + (field.comments ? FIELD_COMMENT_EXTRA_HEIGHT : 0);
+};
+
 export const calcTableHeight = (table?: DBTable): number => {
     if (!table) {
         return 300;
     }
 
-    const FIELD_HEIGHT = 32; // h-8 per field
     const TABLE_FOOTER_HEIGHT = 32; // h-8 for show more button
     const TABLE_HEADER_HEIGHT = 42;
-    // Calculate how many fields are visible
     const fieldCount = table.fields.length;
-    let visibleFieldCount = fieldCount;
 
-    // If not expanded, use minimum of field count and TABLE_MINIMIZED_FIELDS
-    if (!table.expanded) {
-        visibleFieldCount = Math.min(fieldCount, TABLE_MINIMIZED_FIELDS);
+    let visibleFields = table.fields;
+    if (!table.expanded && fieldCount > TABLE_MINIMIZED_FIELDS) {
+        visibleFields = table.fields.slice(0, TABLE_MINIMIZED_FIELDS);
     }
 
-    // Calculate height based on visible fields
-    const fieldsHeight = visibleFieldCount * FIELD_HEIGHT;
+    const fieldsHeight = visibleFields.reduce(
+        (sum, f) => sum + calcFieldHeight(f),
+        0
+    );
+    const tableCommentHeight = table.comments ? TABLE_COMMENT_EXTRA_HEIGHT : 0;
     const showMoreButtonHeight =
         fieldCount > TABLE_MINIMIZED_FIELDS ? TABLE_FOOTER_HEIGHT : 0;
 
-    return TABLE_HEADER_HEIGHT + fieldsHeight + showMoreButtonHeight;
+    return (
+        TABLE_HEADER_HEIGHT +
+        tableCommentHeight +
+        fieldsHeight +
+        showMoreButtonHeight
+    );
 };
 
 export const getTableDimensions = (

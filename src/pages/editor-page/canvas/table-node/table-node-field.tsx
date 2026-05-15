@@ -14,7 +14,6 @@ import {
 import { Button } from '@/components/button/button';
 import {
     KeyRound,
-    MessageCircleMore,
     SquareDot,
     SquareMinus,
     SquarePlus,
@@ -23,11 +22,6 @@ import {
 import { generateDBFieldSuffix, type DBField } from '@/lib/domain/db-field';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { cn } from '@/lib/utils';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/tooltip/tooltip';
 import { useDiff } from '@/context/diff-context/use-diff';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import {
@@ -343,17 +337,19 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
             readonly,
         ]);
 
+        const hasComment = !!field.comments;
+
         return (
             <div
                 className={cn(
-                    'group relative flex h-8 items-center justify-between gap-1 border-t px-3 text-sm last:rounded-b-[6px] hover:bg-slate-100 dark:hover:bg-slate-800',
+                    'group relative border-t last:rounded-b-[6px] hover:bg-slate-100 dark:hover:bg-slate-800',
                     'transition-all duration-200 ease-in-out',
                     {
                         'bg-pink-100 dark:bg-pink-900':
                             highlighted && !isCustomTypeHighlighted,
                         'bg-yellow-100 dark:bg-yellow-900':
                             isCustomTypeHighlighted,
-                        'max-h-8 opacity-100': visible,
+                        'opacity-100': visible,
                         'z-0 max-h-0 overflow-hidden opacity-0': !visible,
                         'bg-sky-200 dark:bg-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900 border-sky-300 dark:border-sky-700':
                             isDiffFieldChanged &&
@@ -367,114 +363,128 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                     }
                 )}
             >
-                {isConnectable ? (
-                    <>
-                        <Handle
-                            id={`${RIGHT_HANDLE_ID_PREFIX}${field.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
-                            position={Position.Right}
-                            type="source"
-                        />
-                        <Handle
-                            id={`${LEFT_HANDLE_ID_PREFIX}${field.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
-                            position={Position.Left}
-                            type="source"
-                        />
-                    </>
-                ) : null}
-                {(!connection.inProgress || isTarget) && isConnectable && (
-                    <>
-                        {Array.from(
-                            { length: numberOfEdgesToField },
-                            (_, index) => index
-                        ).map((index) => (
+                <div className="flex h-8 items-center justify-between gap-1 px-3 text-sm">
+                    {isConnectable ? (
+                        <>
                             <Handle
-                                id={`${TARGET_ID_PREFIX}${index}_${field.id}`}
-                                key={`${TARGET_ID_PREFIX}${index}_${field.id}`}
-                                className={`!invisible`}
+                                id={`${RIGHT_HANDLE_ID_PREFIX}${field.id}`}
+                                className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
+                                position={Position.Right}
+                                type="source"
+                            />
+                            <Handle
+                                id={`${LEFT_HANDLE_ID_PREFIX}${field.id}`}
+                                className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
+                                position={Position.Left}
+                                type="source"
+                            />
+                        </>
+                    ) : null}
+                    {(!connection.inProgress || isTarget) && isConnectable && (
+                        <>
+                            {Array.from(
+                                { length: numberOfEdgesToField },
+                                (_, index) => index
+                            ).map((index) => (
+                                <Handle
+                                    id={`${TARGET_ID_PREFIX}${index}_${field.id}`}
+                                    key={`${TARGET_ID_PREFIX}${index}_${field.id}`}
+                                    className={`!invisible`}
+                                    position={Position.Left}
+                                    type="target"
+                                />
+                            ))}
+                            <Handle
+                                id={`${TARGET_ID_PREFIX}${numberOfEdgesToField}_${field.id}`}
+                                className={
+                                    isTarget
+                                        ? '!absolute !left-0 !top-0 !h-full !w-full !transform-none !rounded-none !border-none !opacity-0'
+                                        : `!invisible`
+                                }
                                 position={Position.Left}
                                 type="target"
                             />
-                        ))}
-                        <Handle
-                            id={`${TARGET_ID_PREFIX}${numberOfEdgesToField}_${field.id}`}
-                            className={
-                                isTarget
-                                    ? '!absolute !left-0 !top-0 !h-full !w-full !transform-none !rounded-none !border-none !opacity-0'
-                                    : `!invisible`
-                            }
-                            position={Position.Left}
-                            type="target"
-                        />
-                    </>
-                )}
-                <div
-                    className={cn('flex items-center gap-1 min-w-0 text-left', {
-                        'font-semibold': field.primaryKey || field.unique,
-                    })}
-                >
-                    {isDiffFieldRemoved ? (
-                        <SquareMinus className="size-3.5 shrink-0 text-red-800 dark:text-red-200" />
-                    ) : isDiffNewField ? (
-                        <SquarePlus className="size-3.5 shrink-0 text-green-800 dark:text-green-200" />
-                    ) : isDiffFieldChanged && !isSummaryOnly ? (
-                        <SquareDot className="size-3.5 shrink-0 text-sky-800 dark:text-sky-200" />
-                    ) : null}
-
-                    <span
-                        className={cn('truncate min-w-0', {
-                            'text-red-800 font-normal dark:text-red-200':
-                                isDiffFieldRemoved,
-                            'text-green-800 font-normal dark:text-green-200':
-                                isDiffNewField,
-                            'text-sky-800 font-normal dark:text-sky-200':
-                                isDiffFieldChanged &&
-                                !isSummaryOnly &&
-                                !isDiffFieldRemoved &&
-                                !isDiffNewField,
-                            'text-blue-600 dark:text-blue-400':
-                                isForeignKey &&
-                                !isDiffFieldRemoved &&
-                                !isDiffNewField &&
-                                !isDiffFieldChanged,
-                        })}
-                    >
-                        {fieldDiffChangedName ? (
-                            <>
-                                {fieldDiffChangedName.old}{' '}
-                                <span className="font-medium">→</span>{' '}
-                                {fieldDiffChangedName.new}
-                            </>
-                        ) : (
-                            field.name
-                        )}
-                    </span>
-                    {field.comments ? (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="shrink-0 cursor-pointer text-muted-foreground">
-                                    <MessageCircleMore size={14} />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs whitespace-pre-wrap break-words">
-                                {field.comments}
-                            </TooltipContent>
-                        </Tooltip>
-                    ) : null}
-                </div>
-
-                <div
-                    className={cn(
-                        'ml-auto flex shrink-0 items-center gap-1 min-w-0',
-                        !readonly ? 'group-hover:hidden' : ''
+                        </>
                     )}
-                >
-                    {(field.primaryKey && !fieldDiffChangedPrimaryKey?.old) ||
-                    fieldDiffChangedPrimaryKey?.new ? (
+                    <div
+                        className={cn(
+                            'flex items-center gap-1 min-w-0 text-left',
+                            {
+                                'font-semibold':
+                                    field.primaryKey || field.unique,
+                            }
+                        )}
+                    >
+                        {isDiffFieldRemoved ? (
+                            <SquareMinus className="size-3.5 shrink-0 text-red-800 dark:text-red-200" />
+                        ) : isDiffNewField ? (
+                            <SquarePlus className="size-3.5 shrink-0 text-green-800 dark:text-green-200" />
+                        ) : isDiffFieldChanged && !isSummaryOnly ? (
+                            <SquareDot className="size-3.5 shrink-0 text-sky-800 dark:text-sky-200" />
+                        ) : null}
+
+                        <span
+                            className={cn('truncate min-w-0', {
+                                'text-red-800 font-normal dark:text-red-200':
+                                    isDiffFieldRemoved,
+                                'text-green-800 font-normal dark:text-green-200':
+                                    isDiffNewField,
+                                'text-sky-800 font-normal dark:text-sky-200':
+                                    isDiffFieldChanged &&
+                                    !isSummaryOnly &&
+                                    !isDiffFieldRemoved &&
+                                    !isDiffNewField,
+                                'text-blue-600 dark:text-blue-400':
+                                    isForeignKey &&
+                                    !isDiffFieldRemoved &&
+                                    !isDiffNewField &&
+                                    !isDiffFieldChanged,
+                            })}
+                        >
+                            {fieldDiffChangedName ? (
+                                <>
+                                    {fieldDiffChangedName.old}{' '}
+                                    <span className="font-medium">→</span>{' '}
+                                    {fieldDiffChangedName.new}
+                                </>
+                            ) : (
+                                field.name
+                            )}
+                        </span>
+                    </div>
+
+                    <div
+                        className={cn(
+                            'ml-auto flex shrink-0 items-center gap-1 min-w-0',
+                            !readonly ? 'group-hover:hidden' : ''
+                        )}
+                    >
+                        {(field.primaryKey &&
+                            !fieldDiffChangedPrimaryKey?.old) ||
+                        fieldDiffChangedPrimaryKey?.new ? (
+                            <div
+                                className={cn(
+                                    'text-muted-foreground shrink-0',
+                                    isDiffFieldRemoved
+                                        ? 'text-red-800 dark:text-red-200'
+                                        : '',
+                                    isDiffNewField
+                                        ? 'text-green-800 dark:text-green-200'
+                                        : '',
+                                    isDiffFieldChanged &&
+                                        !isSummaryOnly &&
+                                        !isDiffFieldRemoved &&
+                                        !isDiffNewField
+                                        ? 'text-sky-800 dark:text-sky-200'
+                                        : ''
+                                )}
+                            >
+                                <KeyRound size={14} />
+                            </div>
+                        ) : null}
                         <div
                             className={cn(
-                                'text-muted-foreground shrink-0',
+                                'text-right text-xs text-muted-foreground overflow-hidden min-w-0',
                                 isDiffFieldRemoved
                                     ? 'text-red-800 dark:text-red-200'
                                     : '',
@@ -482,46 +492,61 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                     ? 'text-green-800 dark:text-green-200'
                                     : '',
                                 isDiffFieldChanged &&
-                                    !isSummaryOnly &&
                                     !isDiffFieldRemoved &&
+                                    !isSummaryOnly &&
                                     !isDiffNewField
                                     ? 'text-sky-800 dark:text-sky-200'
+                                    : '',
+                                isForeignKey &&
+                                    !isDiffFieldRemoved &&
+                                    !isDiffNewField &&
+                                    !isDiffFieldChanged
+                                    ? 'text-blue-600 dark:text-blue-400'
                                     : ''
                             )}
                         >
-                            <KeyRound size={14} />
-                        </div>
-                    ) : null}
-                    <div
-                        className={cn(
-                            'text-right text-xs text-muted-foreground overflow-hidden min-w-0',
-                            isDiffFieldRemoved
-                                ? 'text-red-800 dark:text-red-200'
-                                : '',
-                            isDiffNewField
-                                ? 'text-green-800 dark:text-green-200'
-                                : '',
-                            isDiffFieldChanged &&
-                                !isDiffFieldRemoved &&
-                                !isSummaryOnly &&
-                                !isDiffNewField
-                                ? 'text-sky-800 dark:text-sky-200'
-                                : '',
-                            isForeignKey &&
-                                !isDiffFieldRemoved &&
-                                !isDiffNewField &&
-                                !isDiffFieldChanged
-                                ? 'text-blue-600 dark:text-blue-400'
-                                : ''
-                        )}
-                    >
-                        <span className="block truncate">
-                            {isFieldAttributeChanged || fieldDiffChangedType ? (
-                                <>
-                                    <span className="line-through">
+                            <span className="block truncate">
+                                {isFieldAttributeChanged ||
+                                fieldDiffChangedType ? (
+                                    <>
+                                        <span className="line-through">
+                                            {
+                                                (
+                                                    fieldDiffChangedType?.old
+                                                        ?.name ??
+                                                    field.type.name
+                                                ).split(' ')[0]
+                                            }
+                                            {showFieldAttributes
+                                                ? generateDBFieldSuffix(
+                                                      {
+                                                          ...field,
+                                                          ...{
+                                                              precision:
+                                                                  fieldDiffChangedPrecision?.old ??
+                                                                  field.precision,
+                                                              scale:
+                                                                  fieldDiffChangedScale?.old ??
+                                                                  field.scale,
+                                                              characterMaximumLength:
+                                                                  fieldDiffChangedCharacterMaximumLength?.old ??
+                                                                  field.characterMaximumLength,
+                                                              isArray:
+                                                                  fieldDiffChangedIsArray?.old ??
+                                                                  field.isArray,
+                                                          },
+                                                      },
+                                                      {
+                                                          databaseType,
+                                                      }
+                                                  )
+                                                : field.isArray
+                                                  ? '[]'
+                                                  : ''}
+                                        </span>{' '}
                                         {
                                             (
-                                                fieldDiffChangedType?.old
+                                                fieldDiffChangedType?.new
                                                     ?.name ?? field.type.name
                                             ).split(' ')[0]
                                         }
@@ -531,16 +556,16 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                                       ...field,
                                                       ...{
                                                           precision:
-                                                              fieldDiffChangedPrecision?.old ??
+                                                              fieldDiffChangedPrecision?.new ??
                                                               field.precision,
                                                           scale:
-                                                              fieldDiffChangedScale?.old ??
+                                                              fieldDiffChangedScale?.new ??
                                                               field.scale,
                                                           characterMaximumLength:
-                                                              fieldDiffChangedCharacterMaximumLength?.old ??
+                                                              fieldDiffChangedCharacterMaximumLength?.new ??
                                                               field.characterMaximumLength,
                                                           isArray:
-                                                              fieldDiffChangedIsArray?.old ??
+                                                              fieldDiffChangedIsArray?.new ??
                                                               field.isArray,
                                                       },
                                                   },
@@ -548,81 +573,54 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                                       databaseType,
                                                   }
                                               )
-                                            : field.isArray
+                                            : (fieldDiffChangedIsArray?.new ??
+                                                field.isArray)
                                               ? '[]'
                                               : ''}
-                                    </span>{' '}
-                                    {
-                                        (
-                                            fieldDiffChangedType?.new?.name ??
-                                            field.type.name
-                                        ).split(' ')[0]
-                                    }
-                                    {showFieldAttributes
-                                        ? generateDBFieldSuffix(
-                                              {
-                                                  ...field,
-                                                  ...{
-                                                      precision:
-                                                          fieldDiffChangedPrecision?.new ??
-                                                          field.precision,
-                                                      scale:
-                                                          fieldDiffChangedScale?.new ??
-                                                          field.scale,
-                                                      characterMaximumLength:
-                                                          fieldDiffChangedCharacterMaximumLength?.new ??
-                                                          field.characterMaximumLength,
-                                                      isArray:
-                                                          fieldDiffChangedIsArray?.new ??
-                                                          field.isArray,
-                                                  },
-                                              },
-                                              {
-                                                  databaseType,
-                                              }
-                                          )
-                                        : (fieldDiffChangedIsArray?.new ??
-                                            field.isArray)
-                                          ? '[]'
-                                          : ''}
-                                </>
-                            ) : (
-                                `${field.type.name.split(' ')[0]}${
-                                    showFieldAttributes
-                                        ? generateDBFieldSuffix(field, {
-                                              databaseType,
-                                          })
-                                        : field.isArray
-                                          ? '[]'
-                                          : ''
-                                }`
-                            )}
-                            {fieldDiffChangedNullable ? (
-                                fieldDiffChangedNullable.new ? (
-                                    <span className="font-semibold">?</span>
+                                    </>
                                 ) : (
-                                    <span className="line-through">?</span>
-                                )
-                            ) : field.nullable ? (
-                                '?'
-                            ) : (
-                                ''
-                            )}
-                        </span>
+                                    `${field.type.name.split(' ')[0]}${
+                                        showFieldAttributes
+                                            ? generateDBFieldSuffix(field, {
+                                                  databaseType,
+                                              })
+                                            : field.isArray
+                                              ? '[]'
+                                              : ''
+                                    }`
+                                )}
+                                {fieldDiffChangedNullable ? (
+                                    fieldDiffChangedNullable.new ? (
+                                        <span className="font-semibold">?</span>
+                                    ) : (
+                                        <span className="line-through">?</span>
+                                    )
+                                ) : field.nullable ? (
+                                    '?'
+                                ) : (
+                                    ''
+                                )}
+                            </span>
+                        </div>
                     </div>
+                    {readonly ? null : (
+                        <div className="ml-2 hidden shrink-0 flex-row group-hover:flex">
+                            <Button
+                                variant="ghost"
+                                className="size-6 p-0 hover:bg-primary-foreground"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditTableOnField();
+                                }}
+                            >
+                                <Pencil className="!size-3.5 text-pink-600" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
-                {readonly ? null : (
-                    <div className="ml-2 hidden shrink-0 flex-row group-hover:flex">
-                        <Button
-                            variant="ghost"
-                            className="size-6 p-0 hover:bg-primary-foreground"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                openEditTableOnField();
-                            }}
-                        >
-                            <Pencil className="!size-3.5 text-pink-600" />
-                        </Button>
+                {hasComment && (
+                    <div className="truncate px-3 pb-1 text-xs text-muted-foreground">
+                        {field.comments}
                     </div>
                 )}
             </div>

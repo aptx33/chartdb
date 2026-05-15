@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import type { DBTable } from '@/lib/domain/db-table';
+import { calcInitialTableWidth, type DBTable } from '@/lib/domain/db-table';
 import { deepCopy, generateId } from '@/lib/utils';
 import { defaultTableColor, randomColor, viewColor } from '@/lib/colors';
 import type { ChartDBContext, ChartDBEvent } from './chartdb-context';
@@ -341,9 +341,12 @@ export const ChartDBProvider: React.FC<
             const count = isView
                 ? tables.filter((t) => t.isView).length + 1
                 : tables.filter((t) => !t.isView).length + 1;
+            const tableName =
+                attributes?.name ??
+                (isView ? `view_${count}` : `table_${count}`);
             const table: DBTable = {
                 id: generateId(),
-                name: isView ? `view_${count}` : `table_${count}`,
+                name: tableName,
                 x: 0,
                 y: 0,
                 fields: [
@@ -362,6 +365,7 @@ export const ChartDBProvider: React.FC<
                 createdAt: Date.now(),
                 isView: false,
                 order: tables.length,
+                width: attributes?.width ?? calcInitialTableWidth(tableName),
                 ...attributes,
                 schema: attributes?.schema ?? defaultSchemas[databaseType],
             };

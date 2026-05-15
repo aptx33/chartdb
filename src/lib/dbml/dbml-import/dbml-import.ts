@@ -1,7 +1,7 @@
 import { Parser } from '@dbml/core';
 import type { Diagram } from '@/lib/domain/diagram';
 import { generateDiagramId, generateId, isStringEmpty } from '@/lib/utils';
-import type { DBTable } from '@/lib/domain/db-table';
+import { calcInitialTableWidth, type DBTable } from '@/lib/domain/db-table';
 import { defaultSchemas } from '@/lib/data/default-schemas';
 import type { Cardinality, DBRelationship } from '@/lib/domain/db-relationship';
 import type { DBField } from '@/lib/domain/db-field';
@@ -968,6 +968,7 @@ export const importDBMLToDiagram = async (
                     : {}),
                 x: col * tableSpacing,
                 y: row * tableSpacing,
+                width: calcInitialTableWidth(table.name.replace(/['"]/g, '')),
                 color: defaultTableColor,
                 isView: false,
                 createdAt: Date.now(),

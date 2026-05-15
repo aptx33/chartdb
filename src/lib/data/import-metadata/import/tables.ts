@@ -1,5 +1,6 @@
 import type { DBCheckConstraint, DBIndex, DBTable } from '@/lib/domain';
 import {
+    calcInitialTableWidth,
     DatabaseType,
     generateTableKey,
     schemaNameToDomainSchemaName,
@@ -239,6 +240,7 @@ export const createTablesFromMetadata = ({
             schema: tableSchema,
             x: Math.random() * 1000, // Placeholder X
             y: Math.random() * 800, // Placeholder Y
+            width: calcInitialTableWidth(tableInfo.table),
             fields,
             indexes: dbIndexes,
             checkConstraints: dbCheckConstraints,

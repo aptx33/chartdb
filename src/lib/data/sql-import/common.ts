@@ -1,6 +1,6 @@
 import type { Diagram } from '@/lib/domain/diagram';
 import { generateDiagramId, generateId } from '@/lib/utils';
-import type { DBTable } from '@/lib/domain/db-table';
+import { calcInitialTableWidth, type DBTable } from '@/lib/domain/db-table';
 import type { Cardinality, DBRelationship } from '@/lib/domain/db-relationship';
 import type { DBField } from '@/lib/domain/db-field';
 import type { DBIndex } from '@/lib/domain/db-index';
@@ -955,6 +955,7 @@ export function convertToChartDBDiagram(
             checkConstraints,
             x: col * tableSpacing,
             y: row * tableSpacing,
+            width: calcInitialTableWidth(table.name),
             color: table.isView ? viewColor : defaultTableColor,
             isView: table.isView ?? false,
             createdAt: Date.now(),
