@@ -569,7 +569,7 @@ export function adjustTablePositionsWithoutAreas(
     return tables;
 }
 
-export const FIELD_HEIGHT = 32; // h-8 per field
+export const FIELD_HEIGHT = 33; // h-8 (32px) + border-t (1px) per field
 export const FIELD_COMMENT_EXTRA_HEIGHT = 20; // 注释行额外高度
 export const TABLE_COMMENT_EXTRA_HEIGHT = 20; // 表注释行额外高度
 

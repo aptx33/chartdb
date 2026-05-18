@@ -586,9 +586,24 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                     </Label>
                                 )}
                                 {table.comments ? (
-                                    <div className="truncate px-2 text-xs text-muted-foreground">
-                                        {table.comments}
-                                    </div>
+                                    table.comments.length > 25 ? (
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className="truncate px-2 text-xs text-muted-foreground">
+                                                    {table.comments}
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                                <div className="whitespace-pre-wrap break-words">
+                                                    {table.comments}
+                                                </div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    ) : (
+                                        <div className="truncate px-2 text-xs text-muted-foreground">
+                                            {table.comments}
+                                        </div>
+                                    )
                                 ) : null}
                             </div>
                         </div>

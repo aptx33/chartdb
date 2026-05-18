@@ -30,6 +30,11 @@ import {
 } from './table-node-dependency-indicator';
 import { useCanvas } from '@/hooks/use-canvas';
 import { useLayout } from '@/hooks/use-layout';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/tooltip/tooltip';
 
 export const LEFT_HANDLE_ID_PREFIX = 'left_rel_';
 export const RIGHT_HANDLE_ID_PREFIX = 'right_rel_';
@@ -618,11 +623,25 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         </div>
                     )}
                 </div>
-                {hasComment && (
-                    <div className="truncate px-3 pb-1 text-xs text-muted-foreground">
-                        {field.comments}
-                    </div>
-                )}
+                {hasComment &&
+                    (field.comments!.length > 25 ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="truncate px-3 pb-1 text-xs text-muted-foreground">
+                                    {field.comments}
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                                <div className="whitespace-pre-wrap break-words">
+                                    {field.comments}
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : (
+                        <div className="truncate px-3 pb-1 text-xs text-muted-foreground">
+                            {field.comments}
+                        </div>
+                    ))}
             </div>
         );
     },
