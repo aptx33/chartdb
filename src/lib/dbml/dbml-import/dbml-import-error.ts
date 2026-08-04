@@ -78,6 +78,27 @@ export function parseDBMLError(error: unknown): DBMLError | null {
     return null;
 }
 
+export function getDBMLImportErrorMessage(error: unknown): string | null {
+    if (error instanceof Error) {
+        return error.message.trim() || null;
+    }
+
+    if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        typeof error.message === 'string'
+    ) {
+        return error.message.trim() || null;
+    }
+
+    if (typeof error === 'string') {
+        return error.trim() || null;
+    }
+
+    return null;
+}
+
 const getFirstErrorFromCompileError = (
     error: CompilerError
 ): DBMLError | null => {

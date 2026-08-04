@@ -26,7 +26,10 @@ import { generateDBMLFromDiagram } from '@/lib/dbml/dbml-export/dbml-export';
 import { useDiff } from '@/context/diff-context/use-diff';
 import { importDBMLToDiagram } from '@/lib/dbml/dbml-import/dbml-import';
 import { applyDBMLChanges } from '@/lib/dbml/apply-dbml/apply-dbml';
-import { parseDBMLError } from '@/lib/dbml/dbml-import/dbml-import-error';
+import {
+    getDBMLImportErrorMessage,
+    parseDBMLError,
+} from '@/lib/dbml/dbml-import/dbml-import-error';
 import {
     clearErrorHighlight,
     highlightErrorLine,
@@ -256,6 +259,11 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
                         t('import_dbml_dialog.error.description') +
                             ` (1 error found - in line ${dbmlError.line})`
                     );
+                } else {
+                    setErrorMessage(
+                        getDBMLImportErrorMessage(error) ??
+                            t('import_dbml_dialog.error.description')
+                    );
                 }
             }
         },
@@ -466,7 +474,7 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
                         <AlertCircle className="mt-0.5 size-4 shrink-0 text-orange-600 dark:text-orange-400" />
                         <div className="flex-1">
                             <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                                Syntax Error
+                                Import Error
                             </p>
                             <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-300">
                                 {errorMessage ||

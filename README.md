@@ -9,6 +9,10 @@
 </h1>
 
 <p align="center">
+  <strong>English</strong> | <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
   <b>Open-source database diagrams editor</b> <br />
   <b>No installations • No Database password required.</b> <br />
 </p>
@@ -61,6 +65,16 @@ Instantly visualize your database schema with a single **"Smart Query."** Custom
 
 ChartDB is currently in Public Beta. Star and watch this repository to get notified of updates.
 
+### Changes in This Fork
+
+This repository is a fork of [chartdb/chartdb](https://github.com/chartdb/chartdb). It stays compatible with the upstream project while adding:
+
+- An Electron-based macOS desktop application and DMG packaging scripts.
+- Improved table and field comment rendering, table sizing, and sidebar interactions.
+- Visible DBML import errors for failures that are not reported as parser syntax errors, instead of silently ignoring the import.
+
+Fork-specific changes are kept general-purpose and do not include private schemas, credentials, or organization-specific configuration.
+
 ### Supported Databases
 
 - ✅ PostgreSQL (<img src="./src/assets/postgresql_logo_2.png" width="15"/> + <img src="./src/assets/supabase.png" alt="Supabase" width="15"/> + <img src="./src/assets/timescale.png" alt="Timescale" width="15"/> )
@@ -95,6 +109,34 @@ Or like this if you want to have AI capabilities:
 npm install
 VITE_OPENAI_API_KEY=<YOUR_OPEN_AI_KEY> npm run build
 ```
+
+### macOS Desktop Application
+
+Build the web application and launch it in Electron without creating an installer:
+
+```bash
+npm run desktop:dev
+```
+
+Build a DMG for Apple Silicon Macs:
+
+```bash
+npm run desktop:build:mac
+```
+
+Build a DMG for Intel Macs:
+
+```bash
+npm run desktop:build:mac:x64
+```
+
+Build both Apple Silicon and Intel DMGs:
+
+```bash
+npm run desktop:build:mac:all
+```
+
+Build artifacts are written to `release/`. The current configuration does not include Apple Developer signing or notarization, so macOS Gatekeeper may warn when the application is distributed to another Mac.
 
 ### Run the Docker Container
 
